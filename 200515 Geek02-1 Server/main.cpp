@@ -69,16 +69,18 @@ int main(void)
 	//TCPクライアントからの接続要求を待てる状態にする
 	listen(sock0, 5);
 	
-	//TCPクライアントからの接続要求を受け付ける
-	len = sizeof(client);
-	sock = accept(sock0, (sockaddr *)&client, &len);
+	while (1)//ここがあると単純なTCPクライアントからの接続要求を複数回受け付けれる（何回も作っているから）
+	{
+		//TCPクライアントからの接続要求を受け付ける
+		len = sizeof(client);
+		sock = accept(sock0, (sockaddr *)&client, &len);
 
-	//5文字送信
-	send(sock, "HELLO", 5, 0);//送りたいメッセージ、メッセージの長さ、
+		//5文字送信
+		send(sock, "HELLO", 5, 0);//送りたいメッセージ、メッセージの長さ、
 
-	//TCPセッションの終了
-	closesocket(sock);
-
+		//TCPセッションの終了
+		closesocket(sock);
+	}
 	//winsockの終了
 	WSACleanup();
 
