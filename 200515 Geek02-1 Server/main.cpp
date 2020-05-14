@@ -7,11 +7,18 @@ int main(void)
 {
 	
 	WSADATA wsaData;
+	SOCKET sock;
+	SOCKET sock0;
 
-	//winsockの初期化 第一引数にはwinsockのバージョンを入れる
+	//接続先の情報を入れる構造体
+	sockaddr_in addr;
+	sockaddr_in client;
+	int len;
+	
+	//winsock2の初期化
 	int err = WSAStartup(MAKEWORD(2, 0), &wsaData);
 	
-	//winsockのエラー処理　必須！
+	//winsock2のエラー処理　必須！
 	if (err != 0)
 	{
 		switch (err)
@@ -43,16 +50,34 @@ int main(void)
 		}
 	}
 
-	SOCKET sock;
-
-	sock = socket(AF_UNSPEC, SOCK_STREAM, 0);
+	//ソケットの作成
+	sock0 = socket(AF_INET, SOCK_STREAM, 0);
 	
-	//socketが正常に実行できているかの確認
-	if (sock == INVALID_SOCKET)
+	//socketのエラー処理
+	if (sock0 == INVALID_SOCKET)
 	{
 		printf("error : %d\n", WSAGetLastError());
 		return 1;
 	}
+
+	//ソケットの設定
+	addr.sin_family = AF_INET;					//アドレスファミリ
+	addr.sin_port = htons(12345);				//ポート番号
+	addr.sin_addr.S_un.S_addr = INADDR_ANY;		//IPアドレス
+	bind(sock0, (sockaddr*)&addr, sizeof(addr));//addrの情報をソケットに割り当てる
+
+	//TCPクライアントからの接続要求を待てる状態にする
+	listen(sock0, 5);
+	
+	//TCPクライアントからの接続要求を受け付ける
+	len = sizeof(client);
+	sock = accept(sock0, (sockaddr *)&client, &len);
+
+	//5文字送信
+	send(sock, "HELLO", 5, 0);//送りたいメッセージ、メッセージの長さ、
+
+	//TCPセッションの終了
+	closesocket(sock);
 
 	//winsockの終了
 	WSACleanup();
