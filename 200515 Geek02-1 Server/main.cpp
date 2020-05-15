@@ -1,4 +1,6 @@
 
+#define _WINSOCK_DEPRECATED_NO_WARNINGS
+
 #include<WinSock2.h>
 #include<stdio.h>
 
@@ -13,8 +15,11 @@ int main(void)
 	//接続先の情報を入れる構造体
 	sockaddr_in addr;
 	sockaddr_in client;
+	
 	int len;
 	
+	BOOL yes = 1;//TIME_WAIT回避用
+
 	//winsock2の初期化
 	int err = WSAStartup(MAKEWORD(2, 0), &wsaData);
 	
@@ -62,8 +67,11 @@ int main(void)
 
 	//ソケットの設定
 	addr.sin_family = AF_INET;					//アドレスファミリ
-	addr.sin_port = htons(12345);				//ポート番号
+	addr.sin_port = htons(12345);				//サーバー側のポート番号
 	addr.sin_addr.S_un.S_addr = INADDR_ANY;		//IPアドレス
+
+	//本来は1ポート1個だが複数作れるようにする
+	setsockopt(sock0, SOL_SOCKET, SO_REUSEADDR, (const char *)&yes, sizeof(yes));
 
 	//addrの情報をソケットに割り当てる
 	if (bind(sock0, (sockaddr*)&addr, sizeof(addr)) != 0)
@@ -84,13 +92,17 @@ int main(void)
 		//TCPクライアントからの接続要求を受け付ける
 		len = sizeof(client);
 		
-		
+		//ソケットを受け取り繋ぐ
 		sock = accept(sock0, (sockaddr *)&client, &len);
 		if (sock == INVALID_SOCKET)
 		{
 			printf("accept : %d\n", WSAGetLastError());
 			return 1;
 		}
+
+		//どのクライアントからリクエストを受け取ったか
+		printf("accept connection from %s,port = %d\n", 
+			inet_ntoa(client.sin_addr), ntohs(client.sin_port));
 
 		//5文字送信
 		int n = send(sock, "HELLO", 5, 0);//送りたいメッセージ、メッセージの長さ、
