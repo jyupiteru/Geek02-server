@@ -64,19 +64,41 @@ int main(void)
 	addr.sin_family = AF_INET;					//アドレスファミリ
 	addr.sin_port = htons(12345);				//ポート番号
 	addr.sin_addr.S_un.S_addr = INADDR_ANY;		//IPアドレス
-	bind(sock0, (sockaddr*)&addr, sizeof(addr));//addrの情報をソケットに割り当てる
+
+	//addrの情報をソケットに割り当てる
+	if (bind(sock0, (sockaddr*)&addr, sizeof(addr)) != 0)
+	{
+		printf("bind : %d", WSAGetLastError());
+		return 1;
+	}
 
 	//TCPクライアントからの接続要求を待てる状態にする
-	listen(sock0, 5);
+	if (listen(sock0, 5) != 0)
+	{
+		printf("listen : %d\n", WSAGetLastError());
+		return 1;
+	}
 	
 	while (1)//ここがあると単純なTCPクライアントからの接続要求を複数回受け付けれる（何回も作っているから）
 	{
 		//TCPクライアントからの接続要求を受け付ける
 		len = sizeof(client);
+		
+		
 		sock = accept(sock0, (sockaddr *)&client, &len);
+		if (sock == INVALID_SOCKET)
+		{
+			printf("accept : %d\n", WSAGetLastError());
+			return 1;
+		}
 
 		//5文字送信
-		send(sock, "HELLO", 5, 0);//送りたいメッセージ、メッセージの長さ、
+		int n = send(sock, "HELLO", 5, 0);//送りたいメッセージ、メッセージの長さ、
+		if (n < 1)
+		{
+			printf("send : %d\n", WSAGetLastError());
+			break;
+		}
 
 		//TCPセッションの終了
 		closesocket(sock);
